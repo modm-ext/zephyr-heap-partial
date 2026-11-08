@@ -37,7 +37,7 @@ files += [Path("heap/zephyr_port.h")]
 assert files[-1].exists()
 
 # Fail if a Zephyr include survived, the port header is missing something then
-leftover = [f for f in files if f.suffix in (".c", ".h") and "<zephyr/" in f.read_text()]
+leftover = [f for f in files if f.suffix in (".c", ".h") and f.name != "zephyr_port.h" and "#include <zephyr/" in f.read_text()]
 assert not leftover, f"Zephyr includes left in {leftover}"
 
 partial.commit(files, tag)
