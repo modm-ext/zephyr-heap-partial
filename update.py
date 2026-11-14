@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copies the Zephyr sys_heap allocator and replaces the Zephyr includes with a
 # small stand-alone port header, so that it compiles without the Zephyr tree.
-# Also copies the Zephyr Memory Storage (ZMS) and applies our power-loss fixes.
+# Also copies the Zephyr Memory Storage (ZMS) unchanged.
 
 import re
 import sys
@@ -45,10 +45,7 @@ assert not leftover, f"Zephyr includes left in {leftover}"
 
 # ZMS keeps its Zephyr includes, the user provides them (modm: shim headers).
 # zms.h stays at its include path, so that `#include <zephyr/kvss/zms.h>` works.
-zms = partial.copy_files(src / "subsys/kvss/zms", ["zms.c", "zms_priv.h"], dest=Path("zms"), delete=False)
-zms += partial.copy_files(src / "include", ["zephyr/kvss/zms.h"], dest=Path("zms"), delete=False)
-# the power-loss fixes are maintained in this repository
-partial.apply_patch(Path("zms/power-loss.patch"))
-files += zms + [Path("zms/power-loss.patch")]
+files += partial.copy_files(src / "subsys/kvss/zms", ["zms.c", "zms_priv.h"], dest=Path("zms"))
+files += partial.copy_files(src / "include", ["zephyr/kvss/zms.h"], dest=Path("zms"), delete=False)
 
 partial.commit(files, tag)

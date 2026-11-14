@@ -17,11 +17,7 @@ which is maintained in this repository and defines the few Zephyr macros and
 `CONFIG_SYS_HEAP_*` options the allocator needs. Every option can be overridden
 by defining it before or on the command line.
 
-ZMS keeps its `<zephyr/...>` includes, the user provides these headers. After
-copying, `update.py` applies `zms/power-loss.patch`, which is maintained in this
-repository: ten fixes that make ZMS survive power losses during flash
-operations on flash with ECC and with interrupted erases. They were found with a
-power-loss fuzzer calibrated on STM32 hardware and are meant to be upstreamed to
-Zephyr, see the patch for the list.
+ZMS is copied unchanged and keeps its `<zephyr/...>` includes, the user provides
+these headers.
 
 This repository is updated periodically by GitHub Actions.
