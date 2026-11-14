@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Copies the Zephyr sys_heap allocator and replaces the Zephyr includes with a
 # small stand-alone port header, so that it compiles without the Zephyr tree.
+# Also copies the Zephyr Memory Storage (ZMS) and applies our power-loss fixes.
 
 import re
 import sys
@@ -21,7 +22,9 @@ if "--fast" not in sys.argv:
     subprocess.check_call(["git", "-c", "advice.detachedHead=false", "clone", "--depth=1", "--filter=blob:none",
                            "--sparse", "--branch", tag, f"https://github.com/{repo}.git", str(src)])
     subprocess.check_call(["git", "-C", str(src), "sparse-checkout", "set", "--no-cone",
-                           "/LICENSE", "/lib/heap/heap.c", "/lib/heap/heap.h", "/include/zephyr/sys/sys_heap.h"])
+                           "/LICENSE", "/lib/heap/heap.c", "/lib/heap/heap.h", "/include/zephyr/sys/sys_heap.h",
+                           "/subsys/kvss/zms/zms.c", "/subsys/kvss/zms/zms_priv.h",
+                           "/include/zephyr/kvss/zms.h"])
 
 def localize(line):
     # sys_heap.h is copied next to heap.c, all other Zephyr headers are replaced by the port header
@@ -39,5 +42,13 @@ assert files[-1].exists()
 # Fail if a Zephyr include survived, the port header is missing something then
 leftover = [f for f in files if f.suffix in (".c", ".h") and f.name != "zephyr_port.h" and "#include <zephyr/" in f.read_text()]
 assert not leftover, f"Zephyr includes left in {leftover}"
+
+# ZMS keeps its Zephyr includes, the user provides them (modm: shim headers).
+# zms.h stays at its include path, so that `#include <zephyr/kvss/zms.h>` works.
+zms = partial.copy_files(src / "subsys/kvss/zms", ["zms.c", "zms_priv.h"], dest=Path("zms"), delete=False)
+zms += partial.copy_files(src / "include", ["zephyr/kvss/zms.h"], dest=Path("zms"), delete=False)
+# the power-loss fixes are maintained in this repository
+partial.apply_patch(Path("zms/power-loss.patch"))
+files += zms + [Path("zms/power-loss.patch")]
 
 partial.commit(files, tag)
